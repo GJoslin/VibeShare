@@ -2,18 +2,22 @@
 
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
-import { findUser } from "@/lib/users";
+import { users } from "@/lib/users"; // your mock db file
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
 
-  if (status === "loading") return <p className="p-6 text-zinc-400">Loading...</p>;
-  if (!session) redirect("/auth");
+  if (status === "loading") {
+    return <p className="p-6 text-zinc-400">Loading...</p>;
+  }
+  if (!session) {
+    redirect("/auth"); // force login if not logged in
+  }
 
-  // Get user from our mock db
-  const user = findUser(session.user?.name || "", session.user?.password || ""); 
-  // Since we don’t store password in session, we’ll just fetch by username for demo:
-  // Better approach in real app: store user id in session
+  // Find the full user in mock db (by username or email)
+  const user = users.find(
+    (u) => u.username === session?.user?.name || u.email === session?.user?.email
+  );
 
   return (
     <div className="max-w-md mx-auto mt-12 bg-zinc-900 p-6 rounded-xl border border-zinc-700">
@@ -21,10 +25,12 @@ export default function ProfilePage() {
 
       <div className="flex flex-col gap-3 text-zinc-300">
         <div>
-          <span className="font-semibold">Username:</span> {session.user?.name}
+          <span className="font-semibold">Username:</span>{" "}
+          {session?.user?.name}
         </div>
         <div>
-          <span className="font-semibold">Email:</span> {user?.email || "N/A"}
+          <span className="font-semibold">Email:</span>{" "}
+          {session?.user?.email || "N/A"}
         </div>
         <div>
           <span className="font-semibold">Age Confirmed:</span>{" "}

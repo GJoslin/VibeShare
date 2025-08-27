@@ -16,3 +16,26 @@ export function findUserByUsername(username: string) {
   return users.find((u) => u.username === username) || null;
 }
 
+// lib/users.ts
+
+export type User = {
+  username: string;
+  email: string;
+  password: string;
+  ageConfirmed: boolean;
+};
+
+export const users: User[] = [
+  {
+    username: "john_doe",
+    email: "john@example.com",
+    password: "123456", // mock password (not secure)
+    ageConfirmed: true,
+  },
+  {
+    username: "jane_doe",
+    email: "jane@example.com",
+    password: "abcdef",
+    ageConfirmed: false,
+  },
+];
