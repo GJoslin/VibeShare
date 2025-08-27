@@ -16,15 +16,10 @@
       "static/chunks/main-app.js",
       "static/chunks/app/upload/page.js"
     ],
-    "/login/page": [
+    "/auth/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/login/page.js"
-    ],
-    "/discover/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/discover/page.js"
+      "static/chunks/app/auth/page.js"
     ]
   }
 }
