@@ -1,4 +1,4 @@
-// File: C:\Users\Admin\JoShot-Video\app\api\auth\[...nextauth]\route.ts
+// File: /Users/saiamarthala/JoShot-VibeShare/app/api/auth/[...nextauth]/route.ts
 import * as entry from '../../../../../../app/api/auth/[...nextauth]/route.js'
 import type { NextRequest } from 'next/server.js'
 
