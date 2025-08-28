@@ -1,28 +1,78 @@
+trigger:
+  branches:
+    include:
+      - main  # Change if your default branch is different
 
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  nodeVersion: '22.x'
+  buildDir: '$(Build.ArtifactStagingDirectory)/app'
+
+steps:
+
+# 1️⃣ Install Node.js
 - task: NodeTool@0
   inputs:
     versionSpec: '$(nodeVersion)'
   displayName: 'Install Node.js'
 
-- script: |
-    npm install
-    npm run build
-  displayName: 'Install dependencies & build Next.js'
+# 2️⃣ Install dependencies
+- script: npm install
+  displayName: 'Install NPM dependencies'
 
-- task: ArchiveFiles@2
+# 3️⃣ Build the Next.js app (standalone)
+- script: npm run build
+  displayName: 'Build Next.js standalone app'
+
+# 4️⃣ Copy standalone build files to staging folder
+- task: CopyFiles@2
   inputs:
-    rootFolderOrFile: '.next/standalone'
-    includeRootFolder: false
-    archiveType: 'zip'
-    archiveFile: '$(Build.ArtifactStagingDirectory)/standalone.zip'
-    replaceExistingArchive: true
-  displayName: 'Archive standalone build'
+    SourceFolder: '.next/standalone'
+    Contents: '**/*'
+    TargetFolder: '$(buildDir)'
+  displayName: 'Copy standalone server files'
 
+# 5️⃣ Copy static assets
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: '.next/static'
+    Contents: '**/*'
+    TargetFolder: '$(buildDir)/.next/static'
+  displayName: 'Copy static assets'
 
-# Deploy to Azure Web App
+# 6️⃣ Add web.config for Windows App Service
+- script: |
+    echo ^<configuration^> > $(buildDir)/web.config
+    echo   ^<system.webServer^> >> $(buildDir)/web.config
+    echo     ^<handlers^> >> $(buildDir)/web.config
+    echo       ^<add name="iisnode" path="server.js" verb="*" modules="iisnode" / ^> >> $(buildDir)/web.config
+    echo     ^</handlers^> >> $(buildDir)/web.config
+    echo     ^<rewrite^> >> $(buildDir)/web.config
+    echo       ^<rules^> >> $(buildDir)/web.config
+    echo         ^<rule name="NodeApp" stopProcessing="true"^> >> $(buildDir)/web.config
+    echo           ^<match url=".*" /^> >> $(buildDir)/web.config
+    echo           ^<action type="Rewrite" url="server.js" /^> >> $(buildDir)/web.config
+    echo         ^</rule^> >> $(buildDir)/web.config
+    echo       ^</rules^> >> $(buildDir)/web.config
+    echo     ^</rewrite^> >> $(buildDir)/web.config
+    echo   ^</system.webServer^> >> $(buildDir)/web.config
+    echo ^</configuration^> >> $(buildDir)/web.config
+  displayName: 'Add web.config for Windows App Service'
+
+# 7️⃣ Publish staging folder as artifact
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(buildDir)'
+    ArtifactName: 'standalone'
+    publishLocation: 'Container'
+  displayName: 'Publish build artifact'
+
+# 8️⃣ Deploy to Azure App Service
 - task: AzureWebApp@1
   inputs:
-    azureSubscription: 'VShareAppPCon'  # Your service connection
-    appName: 'VibeShare' # Your main Web App name
-    package: '$(Build.ArtifactStagingDirectory)/app.zip'
+    azureSubscription: 'VShareAppPCon'  # Replace with your service connection
+    appName: 'VibeShare'                     # Replace with your App Service name
+    package: '$(buildDir)'
   displayName: 'Deploy to Azure Web App'
