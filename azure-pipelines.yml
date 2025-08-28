@@ -22,11 +22,11 @@ steps:
 - script: npm install
   displayName: 'Install NPM dependencies'
 
-# 3️⃣ Build the Next.js app (standalone)
+# 3️⃣ Build the Next.js standalone app
 - script: npm run build
   displayName: 'Build Next.js standalone app'
 
-# 4️⃣ Copy standalone build files to staging folder
+# 4️⃣ Copy standalone server files to staging folder
 - task: CopyFiles@2
   inputs:
     SourceFolder: '.next/standalone'
@@ -42,26 +42,43 @@ steps:
     TargetFolder: '$(buildDir)/.next/static'
   displayName: 'Copy static assets'
 
-# 6️⃣ Add web.config for Windows App Service
-- script: |
-    echo ^<configuration^> > $(buildDir)/web.config
-    echo   ^<system.webServer^> >> $(buildDir)/web.config
-    echo     ^<handlers^> >> $(buildDir)/web.config
-    echo       ^<add name="iisnode" path="server.js" verb="*" modules="iisnode" / ^> >> $(buildDir)/web.config
-    echo     ^</handlers^> >> $(buildDir)/web.config
-    echo     ^<rewrite^> >> $(buildDir)/web.config
-    echo       ^<rules^> >> $(buildDir)/web.config
-    echo         ^<rule name="NodeApp" stopProcessing="true"^> >> $(buildDir)/web.config
-    echo           ^<match url=".*" /^> >> $(buildDir)/web.config
-    echo           ^<action type="Rewrite" url="server.js" /^> >> $(buildDir)/web.config
-    echo         ^</rule^> >> $(buildDir)/web.config
-    echo       ^</rules^> >> $(buildDir)/web.config
-    echo     ^</rewrite^> >> $(buildDir)/web.config
-    echo   ^</system.webServer^> >> $(buildDir)/web.config
-    echo ^</configuration^> >> $(buildDir)/web.config
+# 6️⃣ Copy JSON manifest files
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: '.next/standalone'
+    Contents: '*.json'
+    TargetFolder: '$(buildDir)'
+  displayName: 'Copy JSON manifest files'
+
+# 7️⃣ Create web.config for Windows App Service (safe YAML)
+- task: PowerShell@2
+  inputs:
+    targetType: 'inline'
+    script: |
+      $webConfigPath = "$(buildDir)\web.config"
+
+      $lines = @(
+        "<configuration>",
+        "  <system.webServer>",
+        "    <handlers>",
+        "      <add name=`"iisnode`" path=`"server.js`" verb=`*`" modules=`"iisnode`"/>",
+        "    </handlers>",
+        "    <rewrite>",
+        "      <rules>",
+        "        <rule name=`"NodeApp`" stopProcessing=`"true`">",
+        "          <match url=`".*`" />",
+        "          <action type=`"Rewrite`" url=`"server.js`" />",
+        "        </rule>",
+        "      </rules>",
+        "    </rewrite>",
+        "  </system.webServer>",
+        "</configuration>"
+      )
+
+      $lines | Out-File -FilePath $webConfigPath -Encoding UTF8 -Force
   displayName: 'Add web.config for Windows App Service'
 
-# 7️⃣ Publish staging folder as artifact
+# 8️⃣ Publish staging folder as artifact
 - task: PublishBuildArtifacts@1
   inputs:
     PathtoPublish: '$(buildDir)'
@@ -69,7 +86,7 @@ steps:
     publishLocation: 'Container'
   displayName: 'Publish build artifact'
 
-# 8️⃣ Deploy to Azure App Service
+# 9️⃣ Deploy to Azure App Service
 - task: AzureWebApp@1
   inputs:
     azureSubscription: 'VShareAppPCon'  # Replace with your service connection
