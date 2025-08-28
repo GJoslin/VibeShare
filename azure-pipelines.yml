@@ -34,7 +34,7 @@ steps:
     TargetFolder: '$(buildDir)'
   displayName: 'Copy standalone server files'
 
-# 5️⃣ Copy JSON manifest files (required by server.js)
+# 5️⃣ Copy JSON manifest files
 - task: CopyFiles@2
   inputs:
     SourceFolder: '.next/standalone'
@@ -50,7 +50,7 @@ steps:
     TargetFolder: '$(buildDir)/.next/static'
   displayName: 'Copy static assets'
 
-# 7️⃣ Copy node_modules (dependencies)
+# 7️⃣ Copy node_modules
 - task: CopyFiles@2
   inputs:
     SourceFolder: '.next/standalone/node_modules'
@@ -58,7 +58,7 @@ steps:
     TargetFolder: '$(buildDir)/node_modules'
   displayName: 'Copy node_modules'
 
-# 8️⃣ Create web.config for Windows App Service
+# 8️⃣ Create web.config
 - task: PowerShell@2
   inputs:
     targetType: 'inline'
@@ -92,10 +92,12 @@ steps:
     publishLocation: 'Container'
   displayName: 'Publish build artifact'
 
-# 🔟 Deploy to Azure App Service
+# 🔟 Deploy to Azure App Service with Node version
 - task: AzureWebApp@1
   inputs:
     azureSubscription: 'VShareAppPCon'  # Replace with your service connection
     appName: 'VibeShare'                     # Replace with your App Service name
     package: '$(buildDir)'
-  displayName: 'Deploy to Azure Web App'
+    appSettings: |
+      -WEBSITE_NODE_DEFAULT_VERSION=22.18.0
+  displayName: 'Deploy to Azure Web App with Node.js version'
