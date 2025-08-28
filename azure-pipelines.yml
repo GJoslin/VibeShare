@@ -8,7 +8,7 @@ pool:
 
 variables:
   node_version: '18.x'
-  appName: 'joshoot-vibeshare'          # Your Azure Web App name
+  appName: 'JoShotVibeShare'          # Your Azure Web App name
   azureSubscription: 'VibeShare-ARM-Connection'  # Your service connection name
 
 stages:
@@ -18,15 +18,19 @@ stages:
   - job: BuildJob
     displayName: 'Install and Build'
     steps:
+    # Use correct Node version
     - task: UseNode@1
       inputs:
         versionSpec: '$(node_version)'
 
+    # Install dependencies & build
     - script: |
-        npm install
+        export NODE_OPTIONS=--max-old-space-size=4096
+        npm ci --prefer-offline --no-audit --progress=false
         npm run build
-      displayName: 'Install dependencies and build Next.js'
+      displayName: 'Install dependencies & build Next.js'
 
+    # Archive standalone build
     - task: ArchiveFiles@2
       inputs:
         rootFolderOrFile: '.next/standalone'
@@ -35,6 +39,7 @@ stages:
         replaceExistingArchive: true
       displayName: 'Archive standalone build'
 
+    # Publish artifact for deployment
     - publish: '$(Build.ArtifactStagingDirectory)/app.zip'
       artifact: drop
       displayName: 'Publish build artifact'
