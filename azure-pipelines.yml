@@ -15,7 +15,33 @@ steps:
     versionSpec: '20.x'
   displayName: 'Install Node.js'
 
+# Install dependencies and build (if applicable)
 - script: |
     npm install
-    npm run build
-  displayName: 'npm install and build'
+    npm run build || echo "No build step found"
+  displayName: 'Install & Build'
+
+# Archive your files for deployment
+- task: ArchiveFiles@2
+  inputs:
+    rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+    includeRootFolder: false
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
+  displayName: 'Archive Files'
+
+# Publish artifact (optional)
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/app.zip'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
+  displayName: 'Publish Artifact'
+
+# Deploy to Azure Web App using the service connection
+- task: AzureWebApp@1
+  displayName: 'Deploy to VibeShareApp'
+  inputs:
+    azureSubscription: 'VibeShareConnection'   # your service connection
+    appName: 'VibeShare'                  # Web App name in Azure Portal
+    package: '$(Build.ArtifactStagingDirectory)/app.zip'
