@@ -1,0 +1,83 @@
+{
+
+  "name": "vibeshare",
+
+  "version": "1.0.0",
+
+  "private": true,
+
+  "scripts": {
+
+    "dev": "next dev",
+
+    "build": "next build",
+
+    "start": "next start",
+
+    "lint": "next lint"
+
+  },
+
+  "dependencies": {
+
+    "18": "^0.0.0",
+
+    "20": "^3.1.9",
+
+    "bcrypt": "^6.0.0",
+
+    "clsx": "^2.0.0",
+
+    "lucide-react": "^0.441.0",
+
+    "next": "^14.2.5",
+
+    "next-auth": "^4.24.11",
+
+    "react": "^18.3.1",
+
+    "react-dom": "^18.3.1",
+
+    "standalone": "^0.0.1"
+
+  },
+
+  "devDependencies": {
+
+    "@types/bcrypt": "^6.0.0",
+
+    "@types/node": "^20.12.12",
+
+    "@types/react": "^18.2.79",
+
+    "@types/react-dom": "^18.2.25",
+
+    "autoprefixer": "^10.4.19",
+
+    "cpx": "^1.5.0",
+
+    "eslint": "^8.57.0",
+
+    "eslint-config-next": "^14.2.5",
+
+    "npm-run-all": "^4.1.5",
+
+    "postcss": "^8.4.38",
+
+    "tailwindcss": "^3.4.7",
+
+    "typescript": "^5.4.5"
+  },
+
+  "scripts": {
+    "build": "next build",
+    "postbuild": "npm-run-all copy-public copy-static",
+    "copy-public": "cpx \"public/**/*\" .next/standalone/public",
+    "copy-static": "cpx \".next/static/**/*\" .next/standalone/.next/static",
+    "start:standalone": "node .next/standalone/server.js"
+  
+}
+
+
+}
+
