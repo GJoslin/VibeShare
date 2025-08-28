@@ -6,8 +6,8 @@ pool:
 
 variables:
   NODE_VERSION: '18.x'                # compatible with Next.js
-  azureSubscription: 'VShareAppPCon'  # your service connection name
-  appName: 'VShareAppP'               # your Web App name
+  azureSubscription: 'VibeShare-ARM-Connection'  # your service connection name
+  appName: 'JoShotVibeShare'               # your Web App name
 
 steps:
 # 1️⃣ Install Node.js
