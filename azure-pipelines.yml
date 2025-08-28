@@ -1,5 +1,5 @@
 trigger:
-- main
+- main   # Run pipeline on pushes to main branch
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -8,16 +8,19 @@ variables:
   NODE_VERSION: '22.x'
 
 steps:
+# Install Node.js
 - task: NodeTool@0
   inputs:
     versionSpec: '$(NODE_VERSION)'
   displayName: 'Install Node.js'
 
+# Install dependencies and build standalone Next.js app
 - script: |
     npm ci
     npm run build
-  displayName: 'Install dependencies and build'
+  displayName: 'Install dependencies & build'
 
+# Archive standalone build for deployment
 - task: ArchiveFiles@2
   inputs:
     rootFolderOrFile: '.next/standalone'
@@ -26,14 +29,18 @@ steps:
     archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
   displayName: 'Archive standalone build'
 
+# Publish artifact (optional)
 - task: PublishBuildArtifacts@1
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)/app.zip'
     ArtifactName: 'drop'
+    publishLocation: 'Container'
   displayName: 'Publish Artifact'
 
+# Deploy to Azure Web App
 - task: AzureWebApp@1
   inputs:
-    azureSubscription: 'VibeShareAppPCon'   # Your service connection
-    appName: 'VibeShare'                  # Your web app name
+    azureSubscription: 'VShareAppPCon'   # Your service connection
+    appName: 'VibeShare'                 # Your Web App name
     package: '$(Build.ArtifactStagingDirectory)/app.zip'
+  displayName: 'Deploy to VibeShare'
