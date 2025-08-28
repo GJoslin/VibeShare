@@ -1,14 +1,14 @@
 trigger:
   branches:
     include:
-      - main  # Change if your default branch is different
+      - main
 
 pool:
   vmImage: 'windows-latest'
 
 variables:
   nodeVersion: '22.x'
-  buildDir: '$(Build.ArtifactStagingDirectory)/app'
+  buildDir: '$(Build.ArtifactStagingDirectory)/wwwroot'
 
 steps:
 
@@ -22,27 +22,19 @@ steps:
 - script: npm install
   displayName: 'Install NPM dependencies'
 
-# 3️⃣ Build the Next.js standalone app
+# 3️⃣ Build Next.js standalone app
 - script: npm run build
   displayName: 'Build Next.js standalone app'
 
-# 4️⃣ Copy standalone server files
+# 4️⃣ Copy all standalone files to buildDir (flatten)
 - task: CopyFiles@2
   inputs:
     SourceFolder: '.next/standalone'
     Contents: '**/*'
     TargetFolder: '$(buildDir)'
-  displayName: 'Copy standalone server files'
+  displayName: 'Copy standalone app files'
 
-# 5️⃣ Copy JSON manifest files
-- task: CopyFiles@2
-  inputs:
-    SourceFolder: '.next/standalone'
-    Contents: '*.json'
-    TargetFolder: '$(buildDir)'
-  displayName: 'Copy JSON manifest files'
-
-# 6️⃣ Copy static assets
+# 5️⃣ Copy .next/static to buildDir/.next/static
 - task: CopyFiles@2
   inputs:
     SourceFolder: '.next/static'
@@ -50,15 +42,21 @@ steps:
     TargetFolder: '$(buildDir)/.next/static'
   displayName: 'Copy static assets'
 
-# 7️⃣ Copy node_modules
-- task: CopyFiles@2
+# 6️⃣ Verify required files exist
+- task: PowerShell@2
   inputs:
-    SourceFolder: '.next/standalone/node_modules'
-    Contents: '**/*'
-    TargetFolder: '$(buildDir)/node_modules'
-  displayName: 'Copy node_modules'
+    targetType: 'inline'
+    script: |
+      $required = @("server.js","package.json",".next/static")
+      foreach ($f in $required) {
+          if (-not (Test-Path "$(buildDir)\$f")) {
+              Write-Error "Missing required file: $f"
+              exit 1
+          }
+      }
+  displayName: 'Verify required files exist'
 
-# 8️⃣ Generate valid web.config automatically
+# 7️⃣ Generate valid web.config
 - task: PowerShell@2
   inputs:
     targetType: 'inline'
@@ -83,9 +81,9 @@ steps:
         '</configuration>'
       )
       $lines | Out-File -FilePath $webConfigPath -Encoding UTF8 -Force
-  displayName: 'Generate valid web.config'
+  displayName: 'Generate web.config'
 
-# 9️⃣ Publish staging folder as artifact
+# 8️⃣ Publish artifact
 - task: PublishBuildArtifacts@1
   inputs:
     PathtoPublish: '$(buildDir)'
@@ -93,12 +91,12 @@ steps:
     publishLocation: 'Container'
   displayName: 'Publish build artifact'
 
-# 🔟 Deploy to Azure App Service with Node version
+# 9️⃣ Deploy to Azure Web App
 - task: AzureWebApp@1
   inputs:
-    azureSubscription: 'VShareAppPCon'  # Replace with your service connection
-    appName: 'VibeShare'                     # Replace with your App Service name
+    azureSubscription: 'VShareAppPCon'  # Replace this
+    appName: 'VibeShare'                     # Replace this
     package: '$(buildDir)'
     appSettings: |
       -WEBSITE_NODE_DEFAULT_VERSION=22.18.0
-  displayName: 'Deploy to Azure Web App with Node.js version'
+  displayName: 'Deploy to Azure Web App'
