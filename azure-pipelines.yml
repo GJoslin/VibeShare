@@ -1,35 +1,66 @@
-# Azure DevOps Pipeline for Next.js deployment (Windows)
 trigger:
-- main
+  branches:
+    include:
+      - main   # Trigger pipeline on main branch
 
 pool:
-  vmImage: 'windows-latest'
+  vmImage: 'windows-latest'  # Or 'ubuntu-latest' if you prefer Linux
+
+variables:
+  nodeVersion: '22.x'   # Node.js version used in your project
+  buildDir: '$(Build.ArtifactStagingDirectory)'
 
 steps:
+
+# 1️⃣ Install Node.js
 - task: NodeTool@0
   inputs:
-    versionSpec: '22.x'
+    versionSpec: '$(nodeVersion)'
   displayName: 'Install Node.js'
 
+# 2️⃣ Install dependencies & build standalone
 - script: |
     npm install
     npm run build
   displayName: 'Install dependencies & build Next.js'
-  condition: succeeded()
 
+# 3️⃣ Optional: List .next contents for debugging
+- script: dir .next
+  displayName: 'List .next folder'
+
+# 4️⃣ Archive standalone build for artifact (optional)
 - task: ArchiveFiles@2
   inputs:
     rootFolderOrFile: '.next/standalone'
     includeRootFolder: false
     archiveType: 'zip'
-    archiveFile: '$(Build.ArtifactStagingDirectory)/standalone.zip'
+    archiveFile: '$(buildDir)/standalone.zip'
     replaceExistingArchive: true
   displayName: 'Archive standalone build'
 
-# Deploy to Azure Web App
+# 5️⃣ Copy required files to staging directory for deployment
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: '.next/standalone'
+    Contents: '**/*'
+    TargetFolder: '$(buildDir)/standalone'
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: 'public'
+    Contents: '**/*'
+    TargetFolder: '$(buildDir)/standalone/public'
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: '.next/static'
+    Contents: '**/*'
+    TargetFolder: '$(buildDir)/standalone/.next/static'
+
+# 6️⃣ Deploy to Azure App Service
 - task: AzureWebApp@1
   inputs:
-    azureSubscription: 'VShareAppPCon'  # Your service connection
-    appName: 'VibeShare' # Your main Web App name
-    package: '$(Build.ArtifactStagingDirectory)/standalone.zip'  # Fixed filename
+    azureSubscription: 'VShareAppPCon'
+    appName: 'VibeShare'
+    package: '$(buildDir)/standalone/**'
+    enableCustomDeployment: true
   displayName: 'Deploy to Azure Web App'
+
