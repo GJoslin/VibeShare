@@ -1,14 +1,14 @@
 trigger:
   branches:
     include:
-      - main   # or your default branch
+      - main   # adjust to your default branch
 
 pool:
   vmImage: 'ubuntu-latest'
 
 variables:
   node_version: '18.x'
-  appName: 'JoShotVibeShare'          # Your Azure Web App name
+  appName: 'JoShotVibeShare'             # Your Azure Web App name
   azureSubscription: 'VibeShare-ARM-Connection'  # Your service connection name
 
 stages:
@@ -18,15 +18,21 @@ stages:
   - job: BuildJob
     displayName: 'Install and Build'
     steps:
-    # Use correct Node version
+    # Use Node 18
     - task: UseNode@1
       inputs:
         versionSpec: '$(node_version)'
 
+    # Print debug info
+    - script: |
+        echo "Current directory: $(pwd)"
+        node -v
+        npm -v
+      displayName: 'Debug Node & NPM versions'
+
     # Install dependencies & build
     - script: |
-        export NODE_OPTIONS=--max-old-space-size=4096
-        npm ci --prefer-offline --no-audit --progress=false
+        npm ci
         npm run build
       displayName: 'Install dependencies & build Next.js'
 
