@@ -1,21 +1,61 @@
-# Node.js
-# Build a general Node.js project with npm.
-# Add steps that analyze code, save build artifacts, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
-
 trigger:
-- master
+  branches:
+    include:
+      - main   # or your default branch
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: 'ubuntu-latest'
 
-steps:
-- task: NodeTool@0
-  inputs:
-    versionSpec: '20.x'
-  displayName: 'Install Node.js'
+variables:
+  node_version: '18.x'
+  appName: 'joshoot-vibeshare'          # Your Azure Web App name
+  azureSubscription: 'VibeShare-ARM-Connection'  # Your service connection name
 
-- script: |
-    npm install
-    npm run build
-  displayName: 'npm install and build'
+stages:
+- stage: Build
+  displayName: 'Build Stage'
+  jobs:
+  - job: BuildJob
+    displayName: 'Install and Build'
+    steps:
+    - task: UseNode@1
+      inputs:
+        versionSpec: '$(node_version)'
+
+    - script: |
+        npm install
+        npm run build
+      displayName: 'Install dependencies and build Next.js'
+
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: '.next/standalone'
+        includeRootFolder: false
+        archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
+        replaceExistingArchive: true
+      displayName: 'Archive standalone build'
+
+    - publish: '$(Build.ArtifactStagingDirectory)/app.zip'
+      artifact: drop
+      displayName: 'Publish build artifact'
+
+- stage: Deploy
+  displayName: 'Deploy Stage'
+  dependsOn: Build
+  jobs:
+  - deployment: DeployJob
+    displayName: 'Deploy to Azure Web App'
+    environment: 'AzureWebApp'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: drop
+
+          - task: AzureWebApp@1
+            inputs:
+              azureSubscription: '$(azureSubscription)'
+              appName: '$(appName)'
+              package: '$(Pipeline.Workspace)/drop/app.zip'
+            displayName: 'Deploy to Azure Web App'
