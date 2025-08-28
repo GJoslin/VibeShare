@@ -1,51 +1,64 @@
-# Node.js
-# Build a general Node.js project with npm.
-# Add steps that analyze code, save build artifacts, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
-
 trigger:
-- main   # run pipeline on pushes to main branch
+- master   # adjust if your main branch is called 'main'
 
 pool:
   vmImage: ubuntu-latest
 
 variables:
-  NODE_VERSION: '22.x'
+  NODE_VERSION: '18.x'                # compatible with Next.js
+  azureSubscription: 'VShareAppPCon'  # your service connection name
+  appName: 'VShareAppP'               # your Web App name
 
 steps:
-# Install Node.js
+# 1️⃣ Install Node.js
 - task: NodeTool@0
   inputs:
     versionSpec: '$(NODE_VERSION)'
   displayName: 'Install Node.js'
 
-# Install dependencies and build (if applicable)
+# 2️⃣ Debug Node/NPM versions
 - script: |
-    npm install
-    npm run build || echo "No build step found"
-  displayName: 'Install & Build'
+    cd JoShot-VibeShare
+    node -v
+    npm -v
+  displayName: 'Check Node & NPM versions'
 
-# Archive your files for deployment
+# 3️⃣ Install dependencies & build Next.js
+- script: |
+    cd JoShot-VibeShare
+    npm ci
+    npm run build
+  displayName: 'Install dependencies & build Next.js'
+
+# 4️⃣ Debug .next folder contents (verify standalone build)
+- script: |
+    cd JoShot-VibeShare
+    echo "Listing .next contents:"
+    ls -R .next
+  displayName: 'List .next folder contents'
+
+# 5️⃣ Archive the standalone build
 - task: ArchiveFiles@2
   inputs:
     rootFolderOrFile: 'JoShot-VibeShare/.next/standalone'
     includeRootFolder: false
     archiveType: 'zip'
     archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
-  displayName: 'Archive Files'
+    replaceExistingArchive: true
+  displayName: 'Archive standalone build'
 
-# Publish artifact (optional)
+# 6️⃣ Publish build artifact
 - task: PublishBuildArtifacts@1
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)/app.zip'
     ArtifactName: 'drop'
     publishLocation: 'Container'
-  displayName: 'Publish Artifact'
+  displayName: 'Publish build artifact'
 
-# Deploy to Azure Web App using the service connection
+# 7️⃣ Deploy to Azure Web App
 - task: AzureWebApp@1
-  displayName: 'Deploy to JoShot-VibeShare'
   inputs:
-    azureSubscription: 'VibeShare-ARM-Connection'   # your service connection
-    appName: 'JoShotVibeShare'                  # Web App name in Azure Portal
+    azureSubscription: 'VibeShare-ARM-Connection'
+    appName: 'JoShotVibeShare'
     package: '$(Build.ArtifactStagingDirectory)/app.zip'
+  displayName: 'Deploy to Azure Web App'
