@@ -11,8 +11,10 @@ const nextConfig = {
       { protocol: 'https', hostname: 'i.pravatar.cc' }
 
     ]
+    
 
   }
+  output: 'standalone',
 
 };
 
