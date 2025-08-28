@@ -31,6 +31,6 @@ steps:
 - task: AzureWebApp@1
   inputs:
     azureSubscription: 'VShareAppPCon'  # Your service connection
-    appName: 'VibeShare'                # Your main Web App name
+    appName: 'VibeShare' # Your main Web App name
     package: '$(Build.ArtifactStagingDirectory)/app.zip'
   displayName: 'Deploy to Azure Web App'
