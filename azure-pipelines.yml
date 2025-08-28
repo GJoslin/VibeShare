@@ -12,21 +12,21 @@ variables:
 
 steps:
 
-# 1️⃣ Install Node.js
+# Install Node.js
 - task: NodeTool@0
   inputs:
     versionSpec: '$(nodeVersion)'
   displayName: 'Install Node.js'
 
-# 2️⃣ Install dependencies
+# Install dependencies
 - script: npm install
   displayName: 'Install NPM dependencies'
 
-# 3️⃣ Build Next.js standalone app
+# Build Next.js standalone app
 - script: npm run build
   displayName: 'Build Next.js standalone app'
 
-# 4️⃣ Copy all standalone files to buildDir (flatten)
+# Copy standalone build to buildDir (flatten)
 - task: CopyFiles@2
   inputs:
     SourceFolder: '.next/standalone'
@@ -34,7 +34,7 @@ steps:
     TargetFolder: '$(buildDir)'
   displayName: 'Copy standalone app files'
 
-# 5️⃣ Copy .next/static to buildDir/.next/static
+# Copy static assets
 - task: CopyFiles@2
   inputs:
     SourceFolder: '.next/static'
@@ -42,7 +42,7 @@ steps:
     TargetFolder: '$(buildDir)/.next/static'
   displayName: 'Copy static assets'
 
-# 6️⃣ Verify required files exist
+# Ensure required files exist
 - task: PowerShell@2
   inputs:
     targetType: 'inline'
@@ -56,7 +56,7 @@ steps:
       }
   displayName: 'Verify required files exist'
 
-# 7️⃣ Generate valid web.config
+# Generate web.config
 - task: PowerShell@2
   inputs:
     targetType: 'inline'
@@ -83,7 +83,7 @@ steps:
       $lines | Out-File -FilePath $webConfigPath -Encoding UTF8 -Force
   displayName: 'Generate web.config'
 
-# 8️⃣ Publish artifact
+# Publish artifact
 - task: PublishBuildArtifacts@1
   inputs:
     PathtoPublish: '$(buildDir)'
@@ -91,11 +91,11 @@ steps:
     publishLocation: 'Container'
   displayName: 'Publish build artifact'
 
-# 9️⃣ Deploy to Azure Web App
+# Deploy to Azure Web App
 - task: AzureWebApp@1
   inputs:
-    azureSubscription: 'VShareAppPCon'  # Replace this
-    appName: 'VibeShare'                     # Replace this
+    azureSubscription: 'VShareAppPCon'
+    appName: 'VibeShare'
     package: '$(buildDir)'
     appSettings: |
       -WEBSITE_NODE_DEFAULT_VERSION=22.18.0
