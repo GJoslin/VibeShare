@@ -1,13 +1,21 @@
+# Azure DevOps Pipeline for Next.js deployment (Windows)
+trigger:
+- main
 
+pool:
+  vmImage: 'windows-latest'
+
+steps:
 - task: NodeTool@0
   inputs:
-    versionSpec: '22.x' # your Node.js version
+    versionSpec: '22.x'
   displayName: 'Install Node.js'
 
 - script: |
     npm install
     npm run build
   displayName: 'Install dependencies & build Next.js'
+  condition: succeeded()
 
 - task: ArchiveFiles@2
   inputs:
@@ -18,11 +26,10 @@
     replaceExistingArchive: true
   displayName: 'Archive standalone build'
 
-
 # Deploy to Azure Web App
 - task: AzureWebApp@1
   inputs:
     azureSubscription: 'VShareAppPCon'  # Your service connection
     appName: 'VibeShare' # Your main Web App name
-    package: '$(Build.ArtifactStagingDirectory)/app.zip'
+    package: '$(Build.ArtifactStagingDirectory)/standalone.zip'  # Fixed filename
   displayName: 'Deploy to Azure Web App'
