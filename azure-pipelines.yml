@@ -44,11 +44,7 @@ steps:
     SourceFolder: '.next/standalone'
     Contents: '**/*'
     TargetFolder: '$(buildDir)/standalone'
-- task: CopyFiles@2
-  inputs:
-    SourceFolder: 'public'
-    Contents: '**/*'
-    TargetFolder: '$(buildDir)/standalone/public'
+
 - task: CopyFiles@2
   inputs:
     SourceFolder: '.next/static'
