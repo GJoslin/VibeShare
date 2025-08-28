@@ -8,7 +8,7 @@ pool:
 
 variables:
   node_version: '18.x'
-  appName: 'JoShotVibeShare'             # Your Azure Web App name
+  appName: 'joshoot-vibeshare'             # Your Azure Web App name
   azureSubscription: 'VibeShare-ARM-Connection'  # Your service connection name
 
 stages:
@@ -23,8 +23,9 @@ stages:
       inputs:
         versionSpec: '$(node_version)'
 
-    # Print debug info
+    # Debug: show current folder and Node/NPM versions
     - script: |
+        cd JoShot-VibeShare   # adjust if package.json is in a different folder
         echo "Current directory: $(pwd)"
         node -v
         npm -v
@@ -32,6 +33,7 @@ stages:
 
     # Install dependencies & build
     - script: |
+        cd JoShot-VibeShare
         npm ci
         npm run build
       displayName: 'Install dependencies & build Next.js'
@@ -39,7 +41,7 @@ stages:
     # Archive standalone build
     - task: ArchiveFiles@2
       inputs:
-        rootFolderOrFile: '.next/standalone'
+        rootFolderOrFile: 'JoShot-VibeShare/.next/standalone'
         includeRootFolder: false
         archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
         replaceExistingArchive: true
