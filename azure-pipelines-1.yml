@@ -2,7 +2,7 @@ trigger:
 - master   # adjust if your main branch is called 'main'
 
 pool:
-  vmImage: windows-latest
+  vmImage: ubuntu-latest
 
 variables:
   NODE_VERSION: '18.x'                # compatible with Next.js
