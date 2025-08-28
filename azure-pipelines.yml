@@ -1,13 +1,13 @@
 trigger:
   branches:
     include:
-      - main   # Trigger pipeline on main branch
+      - main  # Trigger pipeline on main branch
 
 pool:
-  vmImage: 'windows-latest'  # Or 'ubuntu-latest' if you prefer Linux
+  vmImage: 'windows-latest'  # Or 'ubuntu-latest'
 
 variables:
-  nodeVersion: '22.x'   # Node.js version used in your project
+  nodeVersion: '22.x'   # Node.js version
   buildDir: '$(Build.ArtifactStagingDirectory)'
 
 steps:
@@ -24,39 +24,37 @@ steps:
     npm run build
   displayName: 'Install dependencies & build Next.js'
 
-# 3️⃣ Optional: List .next contents for debugging
+# 3️⃣ Optional: List .next folder for debugging
 - script: dir .next
-  displayName: 'List .next folder'
+  displayName: 'List .next folder contents'
 
-# 4️⃣ Archive standalone build for artifact (optional)
-- task: ArchiveFiles@2
-  inputs:
-    rootFolderOrFile: '.next/standalone'
-    includeRootFolder: false
-    archiveType: 'zip'
-    archiveFile: '$(buildDir)/standalone.zip'
-    replaceExistingArchive: true
-  displayName: 'Archive standalone build'
-
-# 5️⃣ Copy required files to staging directory for deployment
+# 4️⃣ Copy required files to staging directory
 - task: CopyFiles@2
   inputs:
     SourceFolder: '.next/standalone'
     Contents: '**/*'
     TargetFolder: '$(buildDir)/standalone'
-
 - task: CopyFiles@2
   inputs:
     SourceFolder: '.next/static'
     Contents: '**/*'
     TargetFolder: '$(buildDir)/standalone/.next/static'
 
-# 6️⃣ Deploy to Azure App Service
+# 5️⃣ Archive the standalone folder into a zip
+- task: ArchiveFiles@2
+  inputs:
+    rootFolderOrFile: '$(buildDir)/standalone'
+    includeRootFolder: false
+    archiveType: 'zip'
+    archiveFile: '$(buildDir)/standalone.zip'
+    replaceExistingArchive: true
+  displayName: 'Archive standalone build'
+
+# 6️⃣ Deploy the zip to Azure Web App
 - task: AzureWebApp@1
   inputs:
     azureSubscription: 'VShareAppPCon'
     appName: 'VibeShare'
-    package: '$(buildDir)/standalone/**'
+    package: '$(buildDir)/standalone.zip'
     enableCustomDeployment: true
   displayName: 'Deploy to Azure Web App'
-
