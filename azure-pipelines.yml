@@ -58,31 +58,32 @@ steps:
     TargetFolder: '$(buildDir)/node_modules'
   displayName: 'Copy node_modules'
 
-# 8️⃣ Create web.config
+# 8️⃣ Generate valid web.config automatically
 - task: PowerShell@2
   inputs:
     targetType: 'inline'
     script: |
       $webConfigPath = "$(buildDir)\web.config"
       $lines = @(
-        "<configuration>",
-        "  <system.webServer>",
-        "    <handlers>",
-        "      <add name=`"iisnode`" path=`"server.js`" verb=`*`" modules=`"iisnode`"/>",
-        "    </handlers>",
-        "    <rewrite>",
-        "      <rules>",
-        "        <rule name=`"NodeApp`" stopProcessing=`"true`">",
-        "          <match url=`".*`" />",
-        "          <action type=`"Rewrite`" url=`"server.js`" />",
-        "        </rule>",
-        "      </rules>",
-        "    </rewrite>",
-        "  </system.webServer>",
-        "</configuration>"
+        '<?xml version="1.0" encoding="utf-8"?>',
+        '<configuration>',
+        '  <system.webServer>',
+        '    <handlers>',
+        '      <add name="iisnode" path="server.js" verb="*" modules="iisnode"/>',
+        '    </handlers>',
+        '    <rewrite>',
+        '      <rules>',
+        '        <rule name="NodeApp" stopProcessing="true">',
+        '          <match url=".*" />',
+        '          <action type="Rewrite" url="server.js" />',
+        '        </rule>',
+        '      </rules>',
+        '    </rewrite>',
+        '  </system.webServer>',
+        '</configuration>'
       )
       $lines | Out-File -FilePath $webConfigPath -Encoding UTF8 -Force
-  displayName: 'Add web.config for Windows App Service'
+  displayName: 'Generate valid web.config'
 
 # 9️⃣ Publish staging folder as artifact
 - task: PublishBuildArtifacts@1
