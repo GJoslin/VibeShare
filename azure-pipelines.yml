@@ -1,31 +1,23 @@
-trigger:
-- master
 
-pool:
-  vmImage: 'windows-latest'
-
-steps:
-# Install Node.js
 - task: NodeTool@0
   inputs:
-    versionSpec: '22.x'
+    versionSpec: '22.x' # your Node.js version
   displayName: 'Install Node.js'
 
-# Install dependencies and build
 - script: |
-    npm ci
+    npm install
     npm run build
-  displayName: 'Install dependencies and build'
+  displayName: 'Install dependencies & build Next.js'
 
-# Archive the standalone build
 - task: ArchiveFiles@2
   inputs:
     rootFolderOrFile: '.next/standalone'
     includeRootFolder: false
     archiveType: 'zip'
-    archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/standalone.zip'
     replaceExistingArchive: true
   displayName: 'Archive standalone build'
+
 
 # Deploy to Azure Web App
 - task: AzureWebApp@1
