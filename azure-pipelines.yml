@@ -1,47 +1,39 @@
-# Node.js
-# Build a general Node.js project with npm.
-# Add steps that analyze code, save build artifacts, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
-
 trigger:
-- master
+- main
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: 'ubuntu-latest'
+
+variables:
+  NODE_VERSION: '22.x'
 
 steps:
 - task: NodeTool@0
   inputs:
-    versionSpec: '22.x'
+    versionSpec: '$(NODE_VERSION)'
   displayName: 'Install Node.js'
 
-# Install dependencies and build (if applicable)
 - script: |
-    npm install
-    npm run build || echo "No build step found"
-  displayName: 'Install & Build'
+    npm ci
+    npm run build
+  displayName: 'Install dependencies and build'
 
-# Archive your files for deployment
 - task: ArchiveFiles@2
   inputs:
-    rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+    rootFolderOrFile: '.next/standalone'
     includeRootFolder: false
     archiveType: 'zip'
     archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
-  displayName: 'Archive Files'
+  displayName: 'Archive standalone build'
 
-# Publish artifact (optional)
 - task: PublishBuildArtifacts@1
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)/app.zip'
     ArtifactName: 'drop'
-    publishLocation: 'Container'
   displayName: 'Publish Artifact'
 
-# Deploy to Azure Web App using the service connection
 - task: AzureWebApp@1
-  displayName: 'Deploy to VibeShareApp'
   inputs:
-    azureSubscription: 'VibeShareConnection'   # your service connection
-    appName: 'VibeShare'                  # Web App name in Azure Portal
+    azureSubscription: 'VibeShareAppPCon'   # Your service connection
+    appName: 'VibeShareApp'                  # Your web app name
     package: '$(Build.ArtifactStagingDirectory)/app.zip'
