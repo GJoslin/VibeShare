@@ -1,21 +1,18 @@
-# =========================
-# Pipeline: Docker to Azure App Service
-# =========================
 trigger:
-- main  # or your branch
+- main  # Adjust to your branch
 
 variables:
-  dockerHubNamespace: 'vibehub'           # your Docker Hub username/org
+  dockerHubNamespace: 'vibehub'           # Your Docker Hub username/org
   imageName: 'vibeshare-app'              # Docker image name
   azureServiceConnection: 'VShareAppPCon' # ARM service connection name
-  appName: 'VibeShare'                    # Azure App Service name
+  appName: 'vibeShare'                    # Azure App Service name
 
 stages:
 - stage: BuildAndDeploy
-  displayName: 'Build and Deploy Docker Container'
+  displayName: 'Build, Push, and Deploy Docker Container'
   jobs:
-  - job: Docker
-    displayName: 'Docker Login, Build, and Push'
+  - job: DockerDeploy
+    displayName: 'Docker Build, Push, and Azure Deployment'
     steps:
 
     # -------------------
@@ -28,17 +25,18 @@ stages:
         containerRegistry: 'VibeShareCon'  # Your Docker Hub service connection
 
     # -------------------
-    # Step 2: Build Docker image (optional if you build in pipeline)
+    # Step 2: Build Docker image with proper tag
     # -------------------
     - task: Docker@2
       displayName: 'Build Docker Image'
       inputs:
         command: build
         Dockerfile: '**/Dockerfile'
+        buildContext: '.'  # Project root or folder containing Dockerfile
         tags: $(dockerHubNamespace)/$(imageName):latest
 
     # -------------------
-    # Step 3: Push Docker image to Docker Hub
+    # Step 3: Push Docker image
     # -------------------
     - task: Docker@2
       displayName: 'Push Docker Image'
