@@ -5,7 +5,7 @@ variables:
   dockerHubNamespace: 'vibehub'           # Your Docker Hub username/org
   imageName: 'vibeshare-app'              # Docker image name
   azureServiceConnection: 'VShareAppPCon' # ARM service connection name
-  appName: 'VibeShare '                    # Azure App Service name
+  appName: 'VibeShare'                    # Azure App Service name
 
 stages:
 - stage: BuildAndDeploy
