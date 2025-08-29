@@ -1,102 +1,57 @@
+# =========================
+# Pipeline: Docker to Azure App Service
+# =========================
 trigger:
-  branches:
-    include:
-      - main
-
-pool:
-  vmImage: 'windows-latest'
+- main  # or your branch
 
 variables:
-  nodeVersion: '22.x'
-  buildDir: '$(Build.ArtifactStagingDirectory)/wwwroot'
+  dockerHubNamespace: 'vibehub'           # your Docker Hub username/org
+  imageName: 'vibeshare-app'              # Docker image name
+  azureServiceConnection: 'VShareAppPCon' # ARM service connection name
+  appName: 'VibeShare'                    # Azure App Service name
 
-steps:
+stages:
+- stage: BuildAndDeploy
+  displayName: 'Build and Deploy Docker Container'
+  jobs:
+  - job: Docker
+    displayName: 'Docker Login, Build, and Push'
+    steps:
 
-# Install Node.js
-- task: NodeTool@0
-  inputs:
-    versionSpec: '$(nodeVersion)'
-  displayName: 'Install Node.js'
+    # -------------------
+    # Step 1: Docker Login
+    # -------------------
+    - task: Docker@2
+      displayName: 'Login to Docker Hub'
+      inputs:
+        command: login
+        containerRegistry: 'VibeShareCon'  # Your Docker Hub service connection
 
-# Install dependencies
-- script: npm install
-  displayName: 'Install NPM dependencies'
+    # -------------------
+    # Step 2: Build Docker image (optional if you build in pipeline)
+    # -------------------
+    - task: Docker@2
+      displayName: 'Build Docker Image'
+      inputs:
+        command: build
+        Dockerfile: '**/Dockerfile'
+        tags: $(dockerHubNamespace)/$(imageName):latest
 
-# Build Next.js standalone app
-- script: npm run build
-  displayName: 'Build Next.js standalone app'
+    # -------------------
+    # Step 3: Push Docker image to Docker Hub
+    # -------------------
+    - task: Docker@2
+      displayName: 'Push Docker Image'
+      inputs:
+        command: push
+        tags: $(dockerHubNamespace)/$(imageName):latest
 
-# Copy standalone build to buildDir (flatten)
-- task: CopyFiles@2
-  inputs:
-    SourceFolder: '.next/standalone'
-    Contents: '**/*'
-    TargetFolder: '$(buildDir)'
-  displayName: 'Copy standalone app files'
-
-# Copy static assets
-- task: CopyFiles@2
-  inputs:
-    SourceFolder: '.next/static'
-    Contents: '**/*'
-    TargetFolder: '$(buildDir)/.next/static'
-  displayName: 'Copy static assets'
-
-# Ensure required files exist
-- task: PowerShell@2
-  inputs:
-    targetType: 'inline'
-    script: |
-      $required = @("server.js","package.json",".next/static")
-      foreach ($f in $required) {
-          if (-not (Test-Path "$(buildDir)\$f")) {
-              Write-Error "Missing required file: $f"
-              exit 1
-          }
-      }
-  displayName: 'Verify required files exist'
-
-# Generate web.config
-- task: PowerShell@2
-  inputs:
-    targetType: 'inline'
-    script: |
-      $webConfigPath = "$(buildDir)\web.config"
-      $lines = @(
-        '<?xml version="1.0" encoding="utf-8"?>',
-        '<configuration>',
-        '  <system.webServer>',
-        '    <handlers>',
-        '      <add name="iisnode" path="server.js" verb="*" modules="iisnode"/>',
-        '    </handlers>',
-        '    <rewrite>',
-        '      <rules>',
-        '        <rule name="NodeApp" stopProcessing="true">',
-        '          <match url=".*" />',
-        '          <action type="Rewrite" url="server.js" />',
-        '        </rule>',
-        '      </rules>',
-        '    </rewrite>',
-        '  </system.webServer>',
-        '</configuration>'
-      )
-      $lines | Out-File -FilePath $webConfigPath -Encoding UTF8 -Force
-  displayName: 'Generate web.config'
-
-# Publish artifact
-- task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: '$(buildDir)'
-    ArtifactName: 'standalone'
-    publishLocation: 'Container'
-  displayName: 'Publish build artifact'
-
-# Deploy to Azure Web App
-- task: AzureWebApp@1
-  inputs:
-    azureSubscription: 'VShareAppPCon'
-    appName: 'VibeShare'
-    package: '$(buildDir)'
-    appSettings: |
-      -WEBSITE_NODE_DEFAULT_VERSION=22.18.0
-  displayName: 'Deploy to Azure Web App'
+    # -------------------
+    # Step 4: Deploy to Azure App Service
+    # -------------------
+    - task: AzureWebAppContainer@1
+      displayName: 'Deploy to Azure App Service'
+      inputs:
+        azureSubscription: $(azureServiceConnection)
+        appName: $(appName)
+        imageName: $(dockerHubNamespace)/$(imageName):latest
