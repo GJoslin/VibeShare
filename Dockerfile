@@ -1,18 +1,20 @@
-# Use official Node.js image
+# Use official Node.js Alpine image
 FROM node:20-alpine
 
-# Set working directory
+# Set working directory inside container
 WORKDIR /app
 
-# Copy package files and install dependencies
+# Copy package.json and package-lock.json (if present)
 COPY package*.json ./
-RUN npm install --production
 
-# Copy the rest of the app
+# Install dependencies
+RUN npm install
+
+# Copy the rest of the application
 COPY . .
 
-# Expose port the app will run on
-EXPOSE 3000
+# Expose port your app listens on
+EXPOSE 8181
 
-# Start the Next.js standalone server
-CMD ["node", ".next/standalone/server.js"]
+# Start the application
+CMD ["node", "index.js"]
