@@ -4,15 +4,15 @@ FROM node:20-alpine
 # Set working directory
 WORKDIR /app
 
-# Copy package files and install dependencies
+# Copy package.json and install dependencies
 COPY package*.json ./
-RUN npm install --production
+RUN npm install
 
-# Copy the rest of the app
+# Copy the rest of your app
 COPY . .
 
-# Expose port the app will run on
-EXPOSE 3000
+# Expose port your app listens on
+EXPOSE 8181
 
-# Start the Next.js standalone server
-CMD ["node", ".next/standalone/server.js"]
+# Start the app
+CMD ["node", "index.js"]
