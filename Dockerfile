@@ -1,20 +1,23 @@
-# Use official Node.js Alpine image
+# Use Node.js LTS Alpine image
 FROM node:20-alpine
 
-# Set working directory inside container
+# Set working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json (if present)
+# Copy package.json and package-lock.json
 COPY package*.json ./
 
 # Install dependencies
 RUN npm install
 
-# Copy the rest of the application
+# Copy the rest of the app
 COPY . .
 
-# Expose port your app listens on
+# Build the standalone app
+RUN npm run build
+
+# Expose the port your app listens on
 EXPOSE 8181
 
-# Start the application
-CMD ["node", "index.js"]
+# Start the standalone server
+CMD ["npm", "run", "start:standalone"]
