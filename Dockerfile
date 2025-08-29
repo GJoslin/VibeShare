@@ -1,19 +1,33 @@
-# Stage 1: build
+# ------------------------------
+# Stage 1: Build
+# ------------------------------
 FROM node:20-alpine AS builder
+
 WORKDIR /app
+
+# Copy package.json and package-lock.json
 COPY package*.json ./
+
+# Install dependencies
 RUN npm install
+
+# Copy the rest of the application
 COPY . .
+
+# Build the standalone Next.js app
 RUN npm run build
 
-# Stage 2: production
+# ------------------------------
+# Stage 2: Production
+# ------------------------------
 FROM node:20-alpine
+
 WORKDIR /app
 
-# Copy only the standalone build output
+# Copy the standalone build output from builder stage
 COPY --from=builder /app/.next/standalone ./
 
-# Expose the port
+# Expose the port the app listens on
 EXPOSE 8181
 
 # Start the standalone server
