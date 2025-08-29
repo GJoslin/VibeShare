@@ -1,23 +1,20 @@
-# Use Node.js LTS Alpine image
-FROM node:20-alpine
-
-# Set working directory
+# Stage 1: build
+FROM node:20-alpine AS builder
 WORKDIR /app
-
-# Copy package.json and package-lock.json
 COPY package*.json ./
-
-# Install dependencies
 RUN npm install
-
-# Copy the rest of the app
 COPY . .
-
-# Build the standalone app
 RUN npm run build
 
-# Expose the port your app listens on
+# Stage 2: production
+FROM node:20-alpine
+WORKDIR /app
+
+# Copy only the standalone build output
+COPY --from=builder /app/.next/standalone ./
+
+# Expose the port
 EXPOSE 8181
 
 # Start the standalone server
-CMD ["npm", "run", "start:standalone"]
+CMD ["node", "server.js"]
